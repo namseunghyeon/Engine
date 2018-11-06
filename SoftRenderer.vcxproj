@@ -41,7 +41,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -142,10 +142,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Figure.h" />
     <ClInclude Include="GDIHelper.h" />
     <ClInclude Include="IntPoint.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Matrix2.h" />
+    <ClInclude Include="Matrix3.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SoftRenderer.h" />
@@ -153,10 +155,12 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="Vector2.h" />
+    <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDIHelper.cpp" />
     <ClCompile Include="Matrix2.cpp" />
+    <ClCompile Include="Matrix3.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SoftRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -166,6 +170,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="Vector3.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SoftRenderer.rc" />
