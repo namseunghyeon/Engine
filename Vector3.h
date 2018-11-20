@@ -15,8 +15,14 @@ public:
 
 	static float Dist(const Vector3 &V1, const Vector3 &V2);
 	static float DistSquared(const Vector3 &V1, const Vector3 &V2);
+	static float Dot(const Vector3 &V1, const Vector3 &V2);
+	static Vector3 Make2DPoint(float InX, float InY);
+	static Vector3 Make2DVector(float InX, float InY);
 
 	bool Equlas(const Vector3& V, float tolernace = KINDA_SMALL_NUMBER) const;
 
 	Vector3 operator*(const Matrix3 & Mat)const;
+	Vector3 operator+(const Vector3 &other)const;
+	Vector3 operator-(const Vector3 &other)const;
+	Vector3 operator*(float scale) const;
 };

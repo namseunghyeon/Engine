@@ -26,5 +26,7 @@
 #define BIG_NUMBER			(3.4e+38f)
 
 #define FORCEINLINE __forceinline	
+#define RGBA32(r,g,b,a) ((ULONG)((BYTE)(b)) | (ULONG)(((BYTE)(g)) << 8) | (ULONG)(((BYTE)(r)) << 16) | (ULONG)(((BYTE)(a)) << 24))
+#define RGB32(r,g,b) RGBA32(r, g, b, 255)
 
 FORCEINLINE float Deg2Rad(float degree) { return degree * PI / 180.0f; }

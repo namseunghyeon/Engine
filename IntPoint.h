@@ -14,6 +14,6 @@ public:
 	IntPoint(Vector3 InVector3) : X((int)InVector3.X), Y((int)InVector3.Y), Z(1) {}
 
 public:
-	Vector2 ToVector2() { return Vector2((float)X, (float)Y); }
-	Vector3 ToVector3() { return Vector3((float)X, (float)Y, 1); }
+	Vector2 ToVector2() { return Vector2((float)X + 0.5f, (float)Y + 0.5f); }
+	Vector3 ToVector3() { return Vector3((float)X + 0.5f, (float)Y + 0.5f, 1); }
 };
