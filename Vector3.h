@@ -21,6 +21,7 @@ public:
 
 	bool Equlas(const Vector3& V, float tolernace = KINDA_SMALL_NUMBER) const;
 
+	void operator*=(const Matrix3 & Mat);
 	Vector3 operator*(const Matrix3 & Mat)const;
 	Vector3 operator+(const Vector3 &other)const;
 	Vector3 operator-(const Vector3 &other)const;

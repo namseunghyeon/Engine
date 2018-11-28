@@ -38,6 +38,13 @@ bool Vector3::Equlas(const Vector3 & V, float tolernace) const
 		(fabs(Z - V.Z) <= tolernace);
 }
 
+void Vector3::operator*=(const Matrix3 & Mat)
+{
+	X = (X * Mat._11) + (Y * Mat._12) + (Z * Mat._13);
+	Y = (X * Mat._21) + (Y * Mat._22) + (Z * Mat._23);
+	Z = (X * Mat._31) + (Y * Mat._32) + (Z * Mat._33);
+}
+
 Vector3 Vector3::operator*(const Matrix3 & Mat) const
 {
 	Vector3 result;

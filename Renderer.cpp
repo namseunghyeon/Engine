@@ -4,8 +4,8 @@
 #include "GDIHelper.h"
 #include "Renderer.h"
 #include "Vertex.h"
-#include "Figure.h"
-
+#include "IntPoint.h"
+#include "GameObject.h"
 
 bool IsInRange(int x, int y);
 void PutPixel(int x, int y);
@@ -46,14 +46,14 @@ void DrawLine(const Vector3 &start, const Vector3 &end)
 	}
 }
 
-void DrawTriangle(const Vertex &v1, const Vertex &v2, const Vertex &v3)
+void DrawTriangle(const Triangle &tris, const Matrix3 &matrix)
 {
 	Vector2 minPos = Vector2(INFINITY, INFINITY);
 	Vector2 maxPos = Vector2(-INFINITY, -INFINITY);
 
-	Vector3 p1 = v1.position;
-	Vector3 p2 = v2.position;
-	Vector3 p3 = v3.position;
+	Vector3 p1 = tris.vt[0].Position * matrix;
+	Vector3 p2 = tris.vt[1].Position * matrix;
+	Vector3 p3 = tris.vt[2].Position * matrix;
 
 	if (p1.X < minPos.X) minPos.X = p1.X;
 	if (p1.Y < minPos.Y) minPos.Y = p1.Y;
@@ -92,24 +92,37 @@ void DrawTriangle(const Vertex &v1, const Vertex &v2, const Vertex &v3)
 			float t = (dotUU * dotVW - dotUV * dotUW) * invDenom;
 			if (s >= 0 && t >= 0 && ((s + t) <= 1))
 			{
-				BYTE RV1 = GetRValue(v1.color);
-				BYTE RV2 = GetRValue(v2.color);
-				BYTE RV3 = GetRValue(v3.color);
+				ULONG fColor = RGB32(255, 0, 0);
+				if (g_Texture->IsLoaded())
+				{
+					Vector2 uvValue = tris.vt[0].Uv * (1 - s - t)
+						+ tris.vt[1].Uv * s + tris.vt[2].Uv * t;
 
-				BYTE GV1 = GetGValue(v1.color);
-				BYTE GV2 = GetGValue(v2.color);
-				BYTE GV3 = GetGValue(v3.color);
+					fColor = g_Texture->GetTexturePixel(uvValue);
+				}
+
+				else
+				{
+					BYTE RV1 = GetRValue(tris.vt[0].Color);
+					BYTE RV2 = GetRValue(tris.vt[1].Color);
+					BYTE RV3 = GetRValue(tris.vt[2].Color);
+
+					BYTE GV1 = GetGValue(tris.vt[0].Color);
+					BYTE GV2 = GetGValue(tris.vt[1].Color);
+					BYTE GV3 = GetGValue(tris.vt[2].Color);
 
 
-				BYTE BV1 = GetBValue(v1.color);
-				BYTE BV2 = GetBValue(v2.color);
-				BYTE BV3 = GetBValue(v3.color);
+					BYTE BV1 = GetBValue(tris.vt[0].Color);
+					BYTE BV2 = GetBValue(tris.vt[1].Color);
+					BYTE BV3 = GetBValue(tris.vt[2].Color);
 
-				BYTE FinalR = (BYTE)(RV1 * (1 - s - t) + RV2 * s + RV3 * t);
-				BYTE FinalG = (BYTE)(GV1 * (1 - s - t) + GV2 * s + GV3 * t);
-				BYTE FinalB = (BYTE)(BV1 * (1 - s - t) + BV2 * s + BV3 * t);
+					BYTE FinalR = (BYTE)(RV1 * (1 - s - t) + RV2 * s + RV3 * t);
+					BYTE FinalG = (BYTE)(GV1 * (1 - s - t) + GV2 * s + GV3 * t);
+					BYTE FinalB = (BYTE)(BV1 * (1 - s - t) + BV2 * s + BV3 * t);
+					fColor = RGB32(FinalR, FinalG, FinalB);
+				}
 
-				SetColor(FinalR, FinalG, FinalB);
+				SetColor(fColor);
 				PutPixel(pt);
 			}
 		}
@@ -148,334 +161,102 @@ void UpdateFrame(void)
 	if (GetAsyncKeyState(VK_PRIOR)) scale += 0.01f;
 	if (GetAsyncKeyState(VK_NEXT)) scale -= 0.01f;
 
-	// Define Matrix
-	Matrix3 tMat;
-	tMat.SetTransLation(xPos, yPos);
-
-	Matrix3 sMat;
-	sMat.SetScale(scale, scale, scale);
-
-	Matrix3 rMat;
-	rMat.SetRotation(degree);
-
-	Matrix3 TRS;
-	TRS = tMat * rMat * sMat;
-
 	SetColor(255, 0, 0);
 
-	/*Vector3 start = Vector3::Make2DPoint(-50, -50) * TRS;
-	Vector3 end = Vector3::Make2DPoint(50, 50) * TRS;
-	DrawLine(start, end);*/
+	// HEAD
+	static Vector3 p1 = Vector3::Make2DPoint(-80, -80);
+	static Vector3 p2 = Vector3::Make2DPoint(-80, 80);
+	static Vector3 p3 = Vector3::Make2DPoint(80, 80);
+	static Vector3 p4 = Vector3::Make2DPoint(80, -80);
 
-	Vector3 p1 = Vector3::Make2DPoint(-80, -80) * TRS;
-	Vector3 p2 = Vector3::Make2DPoint(-80, 80) * TRS;
-	Vector3 p3 = Vector3::Make2DPoint(80, 80) * TRS;
-	Vector3 p4 = Vector3::Make2DPoint(80, -80) * TRS;
+	static Vertex v1(p1, RGB32(255, 0, 0), Vector2(0.125f, 0.25f));
+	static Vertex v2(p2, RGB32(0, 255, 0), Vector2(0.125f, 0.125f));
+	static Vertex v3(p3, RGB32(0, 0, 255), Vector2(0.25f, 0.125f));
+	static Vertex v4(p4, RGB32(255, 255, 255), Vector2(0.25f, 0.25f));
 
-	DrawTriangle(v1, v2, v3);
-	DrawTriangle(v1, v3, v4);
+	// BODY
+	static Vector3 p5 = Vector3::Make2DPoint(-80, -300);
+	static Vector3 p6 = Vector3::Make2DPoint(-80, -80);
+	static Vector3 p7 = Vector3::Make2DPoint(80, -80);
+	static Vector3 p8 = Vector3::Make2DPoint(80, -300);
 
-	//float radius = 100.0f;
-	//int nradius = (int)radius;
+	static Vertex v5(p5, RGB32(255, 0, 0), Vector2(0.3125f, 0.5f));
+	static Vertex v6(p6, RGB32(0, 255, 0), Vector2(0.3125f, 0.3125f));
+	static Vertex v7(p7, RGB32(0, 0, 255), Vector2(0.4375f, 0.3125f));
+	static Vertex v8(p8, RGB32(255, 255, 255), Vector2(0.4375f, 0.5f));
 
-	//for (int i = -nradius; i <= nradius; i++)
-	//{
-	//	for (int j = -nradius; j <= nradius; j++)
-	//	{
-	//		PutPixel(Vector3((float)i, (float)j) * TRS);
-	//	}
-	//}
+	// L ARAM
+	static Vector3 p9 = Vector3::Make2DPoint(80, -300);
+	static Vector3 p10 = Vector3::Make2DPoint(80, -80);
+	static Vector3 p11 = Vector3::Make2DPoint(140, -80);
+	static Vector3 p12 = Vector3::Make2DPoint(140, -300);
+
+	static Vertex v9(p9, RGB32(255, 0, 0), Vector2(0.5625f, 1.0f));
+	static Vertex v10(p10, RGB32(0, 255, 0), Vector2(0.5625f, 0.8125f));
+	static Vertex v11(p11, RGB32(0, 0, 255), Vector2(0.625f, 0.8125f));
+	static Vertex v12(p12, RGB32(255, 255, 255), Vector2(0.625f, 1.0f));
+
+	// R ARAM
+	static Vector3 p13 = Vector3::Make2DPoint(-140, -300);
+	static Vector3 p14 = Vector3::Make2DPoint(-140, -80);
+	static Vector3 p15 = Vector3::Make2DPoint(-80, -80);
+	static Vector3 p16 = Vector3::Make2DPoint(-80, -300);
+
+	static Vertex v13(p13, RGB32(255, 0, 0), Vector2(0.6875f, 0.5f));
+	static Vertex v14(p14, RGB32(0, 255, 0), Vector2(0.6875f, 0.3125f));
+	static Vertex v15(p15, RGB32(0, 0, 255), Vector2(0.75f, 0.3125f));
+	static Vertex v16(p16, RGB32(255, 255, 255), Vector2(0.75f, 0.5f));
+
+	// L LEG
+	static Vector3 p17 = Vector3::Make2DPoint(0, -500);
+	static Vector3 p18 = Vector3::Make2DPoint(0, -300);
+	static Vector3 p19 = Vector3::Make2DPoint(80, -300);
+	static Vector3 p20 = Vector3::Make2DPoint(80, -500);
+
+	static Vertex v17(p17, RGB32(255, 0, 0), Vector2(0.3125f, 1.0f));
+	static Vertex v18(p18, RGB32(0, 255, 0), Vector2(0.3125f, 0.8125f));
+	static Vertex v19(p19, RGB32(0, 0, 255), Vector2(0.375f, 0.8125f));
+	static Vertex v20(p20, RGB32(255, 255, 255), Vector2(0.375f, 1.0f));
+
+	// R LEG
+	static Vector3 p21 = Vector3::Make2DPoint(-80, -500);
+	static Vector3 p22 = Vector3::Make2DPoint(-80, -300);
+	static Vector3 p23 = Vector3::Make2DPoint(0, -300);
+	static Vector3 p24 = Vector3::Make2DPoint(0, -500);
+
+	static Vertex v21(p21, RGB32(255, 0, 0), Vector2(0.0625f, 0.5f));
+	static Vertex v22(p22, RGB32(0, 255, 0), Vector2(0.0625f, 0.3125f));
+	static Vertex v23(p23, RGB32(0, 0, 255), Vector2(0.125f, 0.3125f));
+	static Vertex v24(p24, RGB32(255, 255, 255), Vector2(0.125f, 0.5f));
+
+	static Triangle tris[]
+	{
+		// HEAD
+		Triangle(v1,v2,v3), Triangle(v1,v3,v4),
+
+		// BODY
+		Triangle(v5,v6,v7), Triangle(v5,v7,v8),
+
+		// L ARAM
+		Triangle(v9,v10,v11), Triangle(v9,v11,v12),
+
+		// R ARAM
+		Triangle(v13,v14,v15), Triangle(v13,v15,v16),
+
+		// L LEG
+		Triangle(v17,v18,v19), Triangle(v17,v19,v20),
+
+		// R LEG
+		Triangle(v21,v22,v23), Triangle(v21,v23,v24),
+	};
+
+	static GameObject2D object1(Mesh(tris, _countof(tris), DrawTriangle));
+
+	object1.Transform.SetPosition(xPos, yPos);
+	object1.Transform.SetAngle(degree);
+	object1.Transform.SetScale(scale, scale, scale);
+	object1.Update();
 
 	// Buffer Swap 
 	BufferSwap();
 }
-
-/*
-// COLOR
-static Vector3 circleColor;
-circleColor.X += 0.1f;
-circleColor.Y += 0.2f;
-circleColor.Z += 0.3f;
-
-circleColor.X = fmodf(circleColor.X, 255.0f);
-circleColor.Y = fmodf(circleColor.Y, 255.0f);
-circleColor.Z = fmodf(circleColor.Z, 255.0f);
-
-// Draw
-SetColor(circleColor.X, circleColor.Y, circleColor.Z);
-
-//¿ø
-static float radius = 80.0f;
-static int nradius = (int)radius;
-static float circleWay = 30.0f;
-
-static float rotateCircleDegree = 0;
-rotateCircleDegree += 0.5f;
-rotateCircleDegree = fmodf(rotateCircleDegree, 360.0f);
-
-static float MaxRadius = 2;
-
-static Vector3 center(0, 0);
-float circleX = (cosf(Deg2Rad(rotateCircleDegree)) * circleWay) + center.X;
-float circleY = (sinf(Deg2Rad(rotateCircleDegree)) * circleWay) + center.Y;
-
-// CHILD
-static float rotateCircleChildDegree = 0;
-rotateCircleChildDegree -= 0.5f;
-rotateCircleChildDegree = fmodf(rotateCircleDegree, -360.0f);
-
-Matrix3 transMat;
-transMat.SetTransLation(circleX, circleY);
-
-Matrix3 rotMat;
-rotMat.SetRotation(rotateCircleDegree);
-Matrix3 TrsMat = transMat * rotMat;
-
-for (int i = -nradius; i <= nradius; i++)
-{
-	for (int j = -nradius; j <= nradius; j++)
-	{
-		IntPoint pt(i, j);
-		Vector3 ptVec = pt.ToVector3();
-
-		if (Vector3::DistSquared(center, ptVec) <= radius * radius)
-		{
-			PutPixel(ptVec * TrsMat);
-		}
-	}
-}
-
-// WAY
-static float circleChild_Way = radius + 70.0f;
-float circleChildX_Right = (cosf(Deg2Rad(rotateCircleChildDegree)) * circleChild_Way) + circleX;
-float circleChildY_Right = (sinf(Deg2Rad(rotateCircleChildDegree)) * circleChild_Way) + circleY;
-
-// COLOR
-static Vector3 color_instance_Right;
-color_instance_Right.X += 0.2f;
-color_instance_Right.Y += 0.4f;
-color_instance_Right.Z += 0.3f;
-
-color_instance_Right.X = fmodf(color_instance_Right.X, 255.0f);
-color_instance_Right.Y = fmodf(color_instance_Right.Y, 255.0f);
-color_instance_Right.Z = fmodf(color_instance_Right.Z, 255.0f);
-
-SetColor(color_instance_Right.X, color_instance_Right.Y, color_instance_Right.Z);
-
-// INSTANCE RIGHT
-// ROTATE
-static float rotateDegree_circleChild = 0;
-rotateDegree_circleChild++;
-rotateDegree_circleChild = fmodf(rotateDegree_circleChild, 360.0f);
-
-// MOVE
-//static float MaxMove1 = 101;
-//static float move1 = 0;
-//move1 = sinf(Deg2Rad(sinDegree)) * MaxMove1;
-
-// SCALE
-
-static Figure instance_Right(20.0f, PutPixel);
-instance_Right.SetPosition(circleChildX_Right, circleChildY_Right);
-//instance1.SetScale(scale1, scale1, scale1);
-instance_Right.SetRotation(rotateDegree_circleChild);
-instance_Right.Update();
-
-// COLOR
-static Vector3 color_Right_Child;
-color_Right_Child.X += 0.4f;
-color_Right_Child.Y += 0.2f;
-color_Right_Child.Z += 0.7f;
-
-color_Right_Child.X = fmodf(color_Right_Child.X, 255.0f);
-color_Right_Child.Y = fmodf(color_Right_Child.Y, 255.0f);
-color_Right_Child.Z = fmodf(color_Right_Child.Z, 255.0f);
-
-SetColor(color_Right_Child.X, color_Right_Child.Y, color_Right_Child.Z);
-
-// INSTANCE RIGHT_CHILD
-static float rotateWay_Right_Child = 0;
-rotateWay_Right_Child += 3.0f;
-rotateWay_Right_Child = fmodf(rotateWay_Right_Child, 360.0f);
-
-// ROTATE
-static float rotateDegree_Right_Child = 0;
-rotateDegree_Right_Child += 7.0f;
-rotateDegree_Right_Child = fmodf(rotateDegree_Right_Child, 360.0f);
-
-// WAY
-static float circleChild_Way_Right_Child = 50.0f;
-float circleChildX_Right_Child = (cosf(Deg2Rad(rotateWay_Right_Child)) * circleChild_Way_Right_Child) + circleChildX_Right;
-float circleChildY_Right_Child = (sinf(Deg2Rad(rotateWay_Right_Child)) * circleChild_Way_Right_Child) + circleChildY_Right;
-
-static Figure instance_Right_Child(10.0f, PutPixel);
-instance_Right_Child.SetPosition(circleChildX_Right_Child, circleChildY_Right_Child);
-instance_Right_Child.SetRotation(rotateDegree_Right_Child);
-instance_Right_Child.Update();
-
-// COLOR
-static Vector3 color_Left;
-color_Left.X += 0.7f;
-color_Left.Y += 0.2f;
-color_Left.Z += 0.4f;
-
-color_Left.X = fmodf(color_Left.X, 255.0f);
-color_Left.Y = fmodf(color_Left.Y, 255.0f);
-color_Left.Z = fmodf(color_Left.Z, 255.0f);
-
-SetColor(color_Left.X, color_Left.Y, color_Left.Z);
-
-// INSTANCE LEFT
-// ROTATE
-// WAY
-float circleChildX_Left = (cosf(Deg2Rad(rotateCircleChildDegree + 180.0f)) * circleChild_Way) + circleX;
-float circleChildY_Left = (sinf(Deg2Rad(rotateCircleChildDegree + 180.0f)) * circleChild_Way) + circleY;
-
-static Figure instance_Left(20.0f, PutPixel);
-instance_Left.SetPosition(circleChildX_Left, circleChildY_Left);
-instance_Left.SetRotation(rotateDegree_circleChild);
-instance_Left.Update();
-
-// COLOR
-static Vector3 color_Left_Child;
-color_Left_Child.X += 0.6f;
-color_Left_Child.Y += 0.2f;
-color_Left_Child.Z += 0.3f;
-
-color_Left_Child.X = fmodf(color_Left_Child.X, 255.0f);
-color_Left_Child.Y = fmodf(color_Left_Child.Y, 255.0f);
-color_Left_Child.Z = fmodf(color_Left_Child.Z, 255.0f);
-
-SetColor(color_Right_Child.X, color_Right_Child.Y, color_Right_Child.Z);
-
-// INSTANCE LEFT_CHILD
-static float rotateWay_Left_Child = 0;
-rotateWay_Left_Child += 3.0f;
-rotateWay_Left_Child = fmodf(rotateWay_Left_Child, 360.0f);
-
-// ROTATE
-static float rotateDegree_Left_Child = 0;
-rotateDegree_Left_Child += 7.0f;
-rotateDegree_Left_Child = fmodf(rotateDegree_Left_Child, 360.0f);
-
-// WAY
-static float circleChild_Way_Left_Child = 50.0f;
-float circleChildX_Left_Child = (cosf(Deg2Rad(rotateWay_Left_Child)) * circleChild_Way_Left_Child) + circleChildX_Left;
-float circleChildY_Left_Child = (sinf(Deg2Rad(rotateWay_Left_Child)) * circleChild_Way_Left_Child) + circleChildY_Left;
-
-static Figure instance_Left_Child(10.0f, PutPixel);
-instance_Right_Child.SetPosition(circleChildX_Left_Child, circleChildY_Left_Child);
-instance_Right_Child.SetRotation(rotateDegree_Left_Child);
-instance_Right_Child.Update();
-
-// COLOR
-static Vector3 color_Top;
-color_Top.X += 0.2f;
-color_Top.Y += 0.2f;
-color_Top.Z += 0.6f;
-
-color_Top.X = fmodf(color_Top.X, 255.0f);
-color_Top.Y = fmodf(color_Top.Y, 255.0f);
-color_Top.Z = fmodf(color_Top.Z, 255.0f);
-
-SetColor(color_Top.X, color_Top.Y, color_Top.Z);
-
-// INSTANCE TOP
-// ROTATE
-// WAY
-float circleChildX_Top = (cosf(Deg2Rad(rotateCircleChildDegree + 90.0f)) * circleChild_Way) + circleX;
-float circleChildY_Top = (sinf(Deg2Rad(rotateCircleChildDegree + 90.0f)) * circleChild_Way) + circleY;
-
-static Figure instance_Top(20.0f, PutPixel);
-instance_Left.SetPosition(circleChildX_Top, circleChildY_Top);
-instance_Left.SetRotation(rotateDegree_circleChild);
-instance_Left.Update();
-
-// COLOR
-static Vector3 color_Top_Child;
-color_Top_Child.X += 0.6f;
-color_Top_Child.Y += 0.6f;
-color_Top_Child.Z += 0.3f;
-
-color_Top_Child.X = fmodf(color_Top_Child.X, 255.0f);
-color_Top_Child.Y = fmodf(color_Top_Child.Y, 255.0f);
-color_Top_Child.Z = fmodf(color_Top_Child.Z, 255.0f);
-
-SetColor(color_Top_Child.X, color_Top_Child.Y, color_Top_Child.Z);
-
-// INSTANCE TOP_CHILD
-static float rotateWay_Top_Child = 0;
-rotateWay_Top_Child += 3.0f;
-rotateWay_Top_Child = fmodf(rotateWay_Top_Child, 360.0f);
-
-// ROTATE
-static float rotateDegree_Top_Child = 0;
-rotateDegree_Top_Child += 7.0f;
-rotateDegree_Top_Child = fmodf(rotateDegree_Top_Child, 360.0f);
-
-// WAY
-static float circleChild_Way_Top_Child = 50.0f;
-float circleChildX_Top_Child = (cosf(Deg2Rad(rotateWay_Top_Child)) * circleChild_Way_Top_Child) + circleChildX_Top;
-float circleChildY_Top_Child = (sinf(Deg2Rad(rotateWay_Top_Child)) * circleChild_Way_Top_Child) + circleChildY_Top;
-
-static Figure instance_Top_Child(10.0f, PutPixel);
-instance_Top_Child.SetPosition(circleChildX_Top_Child, circleChildY_Top_Child);
-instance_Top_Child.SetRotation(rotateDegree_Top_Child);
-instance_Top_Child.Update();
-
-////
-
-// COLOR
-static Vector3 color_Bottom;
-color_Bottom.X += 0.2f;
-color_Bottom.Y += 0.2f;
-color_Top.Z += 0.6f;
-
-color_Bottom.X = fmodf(color_Bottom.X, 255.0f);
-color_Bottom.Y = fmodf(color_Bottom.Y, 255.0f);
-color_Bottom.Z = fmodf(color_Bottom.Z, 255.0f);
-
-SetColor(color_Bottom.X, color_Bottom.Y, color_Bottom.Z);
-
-// INSTANCE BOTTOM
-// ROTATE
-// WAY
-float circleChildX_Bottom = (cosf(Deg2Rad(rotateCircleChildDegree + 270.0f)) * circleChild_Way) + circleX;
-float circleChildY_Bottom = (sinf(Deg2Rad(rotateCircleChildDegree + 270.0f)) * circleChild_Way) + circleY;
-
-static Figure instance_Bottom(20.0f, PutPixel);
-instance_Bottom.SetPosition(circleChildX_Bottom, circleChildY_Bottom);
-instance_Bottom.SetRotation(rotateDegree_circleChild);
-instance_Bottom.Update();
-
-// COLOR
-static Vector3 color_Bottom_Child;
-color_Bottom_Child.X += 0.6f;
-color_Bottom_Child.Y += 0.6f;
-color_Bottom_Child.Z += 0.3f;
-
-color_Bottom_Child.X = fmodf(color_Bottom_Child.X, 255.0f);
-color_Bottom_Child.Y = fmodf(color_Bottom_Child.Y, 255.0f);
-color_Bottom_Child.Z = fmodf(color_Bottom_Child.Z, 255.0f);
-
-SetColor(color_Bottom_Child.X, color_Bottom_Child.Y, color_Bottom_Child.Z);
-
-// INSTANCE TOP_CHILD
-static float rotateWay_Bottom_Child = 0;
-rotateWay_Bottom_Child += 3.0f;
-rotateWay_Bottom_Child = fmodf(rotateWay_Bottom_Child, 360.0f);
-
-// ROTATE
-static float rotateDegree_Bottom_Child = 0;
-rotateDegree_Bottom_Child += 7.0f;
-rotateDegree_Bottom_Child = fmodf(rotateDegree_Bottom_Child, 360.0f);
-
-// WAY
-static float circleChild_Way_Bttom_Child = 50.0f;
-float circleChildX_Bottom_Child = (cosf(Deg2Rad(rotateWay_Bottom_Child)) * circleChild_Way_Top_Child) + circleChildX_Bottom;
-float circleChildY_Bottom_Child = (sinf(Deg2Rad(rotateWay_Bottom_Child)) * circleChild_Way_Top_Child) + circleChildY_Bottom;
-
-static Figure instance_Bttom_Child(10.0f, PutPixel);
-instance_Bttom_Child.SetPosition(circleChildX_Bottom_Child, circleChildY_Bottom_Child);
-instance_Bttom_Child.SetRotation(rotateDegree_Bottom_Child);
-instance_Bttom_Child.Update();*/
