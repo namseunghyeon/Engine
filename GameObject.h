@@ -7,6 +7,7 @@ struct  GameObject2D
 {
 public:
 	GameObject2D() {};
+	GameObject2D(const Transform2D InTransform) : Transform(InTransform) {};
 	GameObject2D(const Mesh &InMesh) : mMesh(InMesh) {};
 	GameObject2D(const Transform2D InTransform, const Mesh &InMesh) :
 		Transform(InTransform), mMesh(InMesh) {}
@@ -17,6 +18,12 @@ public:
 	void Update()
 	{
 		Transform.Update();
+		mMesh.Update(Transform);
+	}
+
+	void Update(Transform2D &viewMatrix)
+	{
+		Transform.Update(viewMatrix.GetMatrix());
 		mMesh.Update(Transform);
 	}
 };

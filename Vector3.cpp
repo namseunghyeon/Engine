@@ -6,11 +6,25 @@ float Vector3::Dist(const Vector3 & V1, const Vector3 & V2)
 	return sqrtf(DistSquared(V1, V2));
 }
 
+float Vector3::Dist(const Vector3 & V1, const Vector2 & V2)
+{
+	return sqrtf(DistSquared(V1, V2));
+}
+
 float Vector3::DistSquared(const Vector3 & V1, const Vector3 & V2)
 {
 	float xLength = V2.X - V1.X;
 	float yLength = V2.Y - V1.Y;
 	float zLength = V2.Z - V1.Z;
+
+	return (xLength * xLength) + (yLength * yLength) + (zLength * zLength);
+}
+
+float Vector3::DistSquared(const Vector3 & V1, const Vector2 & V2)
+{
+	float xLength = V2.X - V1.X;
+	float yLength = V2.Y - V1.Y;
+	float zLength = 1 - V1.Z;
 
 	return (xLength * xLength) + (yLength * yLength) + (zLength * zLength);
 }

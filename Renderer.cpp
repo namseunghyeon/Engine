@@ -7,6 +7,38 @@
 #include "IntPoint.h"
 #include "GameObject.h"
 
+#pragma region UV_POINT
+// BODY
+// Vector2(0.3125f, 0.5f));
+// Vector2(0.3125f, 0.3125f));
+// Vector2(0.4375f, 0.3125f));
+// Vector2(0.4375f, 0.5f));
+
+// L ARAM
+// Vector2(0.5625f, 1.0f));
+// Vector2(0.5625f, 0.8125f));
+// Vector2(0.625f, 0.8125f));
+// Vector2(0.625f, 1.0f));
+
+// R ARAM
+// Vector2(0.6875f, 0.5f));
+// Vector2(0.6875f, 0.3125f));
+// Vector2(0.75f, 0.3125f));
+// Vector2(0.75f, 0.5f));
+
+// L LEG
+// Vector2(0.3125f, 1.0f));
+// Vector2(0.3125f, 0.8125f));
+// Vector2(0.375f, 0.8125f));
+// Vector2(0.375f, 1.0f));
+
+// R LEG
+// Vector2(0.0625f, 0.5f));
+// Vector2(0.0625f, 0.3125f));
+// Vector2(0.125f, 0.3125f));
+// Vector2(0.125f, 0.5f));
+#pragma endregion
+
 bool IsInRange(int x, int y);
 void PutPixel(int x, int y);
 void DrawLine(const Vector3 &start, const Vector3 &end);
@@ -80,18 +112,15 @@ void DrawTriangle(const Triangle &tris, const Matrix3 &matrix)
 	IntPoint minPt(minPos);
 	IntPoint maxPt(maxPos);
 
-	for (int x = minPt.X; x < maxPt.X; x++)
-	{
-		for (int y = minPt.Y; y < maxPt.Y; y++)
-		{
+	for (int x = minPt.X; x < maxPt.X; x++) {
+		for (int y = minPt.Y; y < maxPt.Y; y++) {
 			IntPoint pt(x, y);
 			Vector3 w = pt.ToVector3() - p1;
 			float dotUW = Vector3::Dot(u, w);
 			float dotVW = Vector3::Dot(v, w);
 			float s = (dotVV * dotUW - dotUV * dotVW) * invDenom;
 			float t = (dotUU * dotVW - dotUV * dotUW) * invDenom;
-			if (s >= 0 && t >= 0 && ((s + t) <= 1))
-			{
+			if (s >= 0 && t >= 0 && ((s + t) <= 1)) {
 				ULONG fColor = RGB32(255, 0, 0);
 				if (g_Texture->IsLoaded())
 				{
@@ -101,8 +130,7 @@ void DrawTriangle(const Triangle &tris, const Matrix3 &matrix)
 					fColor = g_Texture->GetTexturePixel(uvValue);
 				}
 
-				else
-				{
+				else {
 					BYTE RV1 = GetRValue(tris.vt[0].Color);
 					BYTE RV2 = GetRValue(tris.vt[1].Color);
 					BYTE RV3 = GetRValue(tris.vt[2].Color);
@@ -129,8 +157,7 @@ void DrawTriangle(const Triangle &tris, const Matrix3 &matrix)
 	}
 }
 
-void UpdateFrame(void)
-{
+void UpdateFrame(void) {
 	// Buffer Clear
 	SetColor(32, 128, 255);
 	Clear();
@@ -143,24 +170,24 @@ void UpdateFrame(void)
 	static float degree = 0;
 
 	// Input
-	if (GetAsyncKeyState(VK_LEFT)) degree += 1;
-	if (GetAsyncKeyState(VK_RIGHT)) degree -= 1;
+	if (GetAsyncKeyState(VK_LEFT)) xPos--;
+	else if (GetAsyncKeyState(VK_RIGHT)) xPos++;
 
-	if (GetAsyncKeyState(VK_DOWN))
-	{
-		xPos -= cosf(Deg2Rad(degree));
-		yPos -= sinf(Deg2Rad(degree));
-	}
-	if (GetAsyncKeyState(VK_UP))
-	{
-		xPos += cosf(Deg2Rad(degree));
-		yPos += sinf(Deg2Rad(degree));
-	}
+	if (GetAsyncKeyState(VK_DOWN)) yPos--;
+	else if (GetAsyncKeyState(VK_UP)) yPos++;
+
+	if (GetAsyncKeyState(VK_HOME)) degree--;
+	else if (GetAsyncKeyState(VK_END))degree++;
 
 	// VK_PRIOR, VK_NEXT
 	if (GetAsyncKeyState(VK_PRIOR)) scale += 0.01f;
 	if (GetAsyncKeyState(VK_NEXT)) scale -= 0.01f;
 
+	static GameObject2D Cameara(Transform2D(Vector2(0, 0), 0));
+	Cameara.Transform.SetPosition(xPos, yPos);
+	Cameara.Transform.SetAngle(degree);
+	Cameara.Transform.UpdateRTMatrix();
+		
 	SetColor(255, 0, 0);
 
 	// HEAD
@@ -174,88 +201,41 @@ void UpdateFrame(void)
 	static Vertex v3(p3, RGB32(0, 0, 255), Vector2(0.25f, 0.125f));
 	static Vertex v4(p4, RGB32(255, 255, 255), Vector2(0.25f, 0.25f));
 
-	// BODY
-	static Vector3 p5 = Vector3::Make2DPoint(-80, -300);
-	static Vector3 p6 = Vector3::Make2DPoint(-80, -80);
-	static Vector3 p7 = Vector3::Make2DPoint(80, -80);
-	static Vector3 p8 = Vector3::Make2DPoint(80, -300);
-
-	static Vertex v5(p5, RGB32(255, 0, 0), Vector2(0.3125f, 0.5f));
-	static Vertex v6(p6, RGB32(0, 255, 0), Vector2(0.3125f, 0.3125f));
-	static Vertex v7(p7, RGB32(0, 0, 255), Vector2(0.4375f, 0.3125f));
-	static Vertex v8(p8, RGB32(255, 255, 255), Vector2(0.4375f, 0.5f));
-
-	// L ARAM
-	static Vector3 p9 = Vector3::Make2DPoint(80, -300);
-	static Vector3 p10 = Vector3::Make2DPoint(80, -80);
-	static Vector3 p11 = Vector3::Make2DPoint(140, -80);
-	static Vector3 p12 = Vector3::Make2DPoint(140, -300);
-
-	static Vertex v9(p9, RGB32(255, 0, 0), Vector2(0.5625f, 1.0f));
-	static Vertex v10(p10, RGB32(0, 255, 0), Vector2(0.5625f, 0.8125f));
-	static Vertex v11(p11, RGB32(0, 0, 255), Vector2(0.625f, 0.8125f));
-	static Vertex v12(p12, RGB32(255, 255, 255), Vector2(0.625f, 1.0f));
-
-	// R ARAM
-	static Vector3 p13 = Vector3::Make2DPoint(-140, -300);
-	static Vector3 p14 = Vector3::Make2DPoint(-140, -80);
-	static Vector3 p15 = Vector3::Make2DPoint(-80, -80);
-	static Vector3 p16 = Vector3::Make2DPoint(-80, -300);
-
-	static Vertex v13(p13, RGB32(255, 0, 0), Vector2(0.6875f, 0.5f));
-	static Vertex v14(p14, RGB32(0, 255, 0), Vector2(0.6875f, 0.3125f));
-	static Vertex v15(p15, RGB32(0, 0, 255), Vector2(0.75f, 0.3125f));
-	static Vertex v16(p16, RGB32(255, 255, 255), Vector2(0.75f, 0.5f));
-
-	// L LEG
-	static Vector3 p17 = Vector3::Make2DPoint(0, -500);
-	static Vector3 p18 = Vector3::Make2DPoint(0, -300);
-	static Vector3 p19 = Vector3::Make2DPoint(80, -300);
-	static Vector3 p20 = Vector3::Make2DPoint(80, -500);
-
-	static Vertex v17(p17, RGB32(255, 0, 0), Vector2(0.3125f, 1.0f));
-	static Vertex v18(p18, RGB32(0, 255, 0), Vector2(0.3125f, 0.8125f));
-	static Vertex v19(p19, RGB32(0, 0, 255), Vector2(0.375f, 0.8125f));
-	static Vertex v20(p20, RGB32(255, 255, 255), Vector2(0.375f, 1.0f));
-
-	// R LEG
-	static Vector3 p21 = Vector3::Make2DPoint(-80, -500);
-	static Vector3 p22 = Vector3::Make2DPoint(-80, -300);
-	static Vector3 p23 = Vector3::Make2DPoint(0, -300);
-	static Vector3 p24 = Vector3::Make2DPoint(0, -500);
-
-	static Vertex v21(p21, RGB32(255, 0, 0), Vector2(0.0625f, 0.5f));
-	static Vertex v22(p22, RGB32(0, 255, 0), Vector2(0.0625f, 0.3125f));
-	static Vertex v23(p23, RGB32(0, 0, 255), Vector2(0.125f, 0.3125f));
-	static Vertex v24(p24, RGB32(255, 255, 255), Vector2(0.125f, 0.5f));
-
-	static Triangle tris[]
-	{
-		// HEAD
+	static Triangle tris[]{
 		Triangle(v1,v2,v3), Triangle(v1,v3,v4),
-
-		// BODY
-		Triangle(v5,v6,v7), Triangle(v5,v7,v8),
-
-		// L ARAM
-		Triangle(v9,v10,v11), Triangle(v9,v11,v12),
-
-		// R ARAM
-		Triangle(v13,v14,v15), Triangle(v13,v15,v16),
-
-		// L LEG
-		Triangle(v17,v18,v19), Triangle(v17,v19,v20),
-
-		// R LEG
-		Triangle(v21,v22,v23), Triangle(v21,v23,v24),
 	};
 
 	static GameObject2D object1(Mesh(tris, _countof(tris), DrawTriangle));
+	
+	// OBJECT 2
+	static Vertex object2V1(Vector3::Make2DPoint(-350, 0), RGB32(255, 255, 255), Vector2(0.125f, 0.25f));
+	static Vertex object2V2(Vector3::Make2DPoint(-350, -50), RGB32(255, 0, 0), Vector2(0.125f, 0.125f));
+	static Vertex object2V3(Vector3::Make2DPoint(-300, -50), RGB32(0, 255, 0), Vector2(0.25f, 0.125f));
+	static Vertex object2V4(Vector3::Make2DPoint(-300, 0), RGB32(0, 0, 255), Vector2(0.25f, 0.25f));
 
-	object1.Transform.SetPosition(xPos, yPos);
-	object1.Transform.SetAngle(degree);
-	object1.Transform.SetScale(scale, scale, scale);
-	object1.Update();
+	static Triangle object2Tris[]{
+		Triangle(object2V1,object2V2,object2V3),
+		Triangle(object2V1,object2V3,object2V4),
+	};
+
+	static GameObject2D object2(Mesh(object2Tris, _countof(object2Tris), DrawTriangle));
+
+	// OBJECT 3
+	static Vertex object3V1(Vector3::Make2DPoint(-250, 0), RGB32(255, 255, 255), Vector2(0.3125f, 0.5f));
+	static Vertex object3V2(Vector3::Make2DPoint(-250, -50), RGB32(255, 0, 0), Vector2(0.3125f, 0.3125f));
+	static Vertex object3V3(Vector3::Make2DPoint(-200, -50), RGB32(0, 255, 0), Vector2(0.4375f, 0.3125f));
+	static Vertex object3V4(Vector3::Make2DPoint(-200, 0), RGB32(0, 0, 255), Vector2(0.4375f, 0.5f));
+
+	static Triangle object3Tris[]{
+		Triangle(object3V1,object3V2,object3V3),
+		Triangle(object3V1,object3V3,object3V4),
+	};
+
+	static GameObject2D object3(Mesh(object3Tris, _countof(object3Tris), DrawTriangle));
+
+	object1.Update(Cameara.Transform);
+	object2.Update(Cameara.Transform);
+	object3.Update(Cameara.Transform);
 
 	// Buffer Swap 
 	BufferSwap();
